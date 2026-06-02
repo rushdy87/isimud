@@ -1,0 +1,62 @@
+import { EventBus } from './core/events/EventBus.js';
+import { TcpTransport } from './network/TcpTransport.js';
+import { CommandHandler } from './commands/CommandHandler.js';
+import { TerminalUI } from './cli/TerminalUI.js';
+import { MessageFactory } from './core/messages/MessageFactory.js';
+
+const username = process.argv[2] || 'anonymous';
+const port = Number(process.argv[3]) || 4000;
+
+const eventBus = new EventBus();
+
+const transport = new TcpTransport({ eventBus });
+
+const commandHandler = new CommandHandler({
+  username,
+  transport,
+  eventBus,
+});
+
+const terminalUI = new TerminalUI({ commandHandler });
+
+eventBus.on('network:listening', ({ port }) => {
+  console.log(`Isimud listening on port ${port}`);
+  console.log('Type /help for commands');
+});
+
+eventBus.on('peer:connected', ({ peerId }) => {
+  console.log(`Peer connected: ${peerId}`);
+
+  const helloMessage = MessageFactory.createHelloMessage({
+    from: username,
+  });
+
+  transport.sendToAll(helloMessage);
+});
+
+eventBus.on('peer:disconnected', ({ peerId }) => {
+  console.log(`Peer disconnected: ${peerId}`);
+});
+
+eventBus.on('message:received', ({ peerId, message }) => {
+  if (message.type === 'chat_message') {
+    console.log(`\n[${message.from}]: ${message.body}`);
+  }
+
+  if (message.type === 'hello') {
+    console.log(`\n${message.from} joined from ${peerId}`);
+  }
+
+  terminalUI.rl.prompt();
+});
+
+eventBus.on('message:invalid', ({ peerId, rawMessage }) => {
+  console.log(`Invalid message from ${peerId}: ${rawMessage}`);
+});
+
+eventBus.on('network:error', ({ peerId, error }) => {
+  console.log(`Network error with ${peerId}: ${error.message}`);
+});
+
+transport.listen(port);
+terminalUI.start();

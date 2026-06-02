@@ -1,0 +1,22 @@
+{
+  "name": "isimud",
+  "version": "0.1.0",
+  "description": "Isimud: A peer-to-peer local network chat application.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rushdy87/isimud.git"
+  },
+  "keywords": [],
+  "author": "Rushdy",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/rushdy87/isimud/issues"
+  },
+  "homepage": "https://github.com/rushdy87/isimud#readme"
+}
