@@ -36,8 +36,8 @@ eventBus.on('peer:connected', ({ peerId }) => {
 
   const helloMessage = MessageFactory.createHelloMessage({
     from: username,
+    port,
   });
-
   transport.sendToAll(helloMessage);
 });
 
@@ -48,12 +48,13 @@ eventBus.on('peer:disconnected', ({ peerId }) => {
 
 eventBus.on('message:received', ({ peerId, message }) => {
   if (message.type === 'chat_message') {
-    console.log(`\n[${message.from}]: ${message.body}`);
+    console.log(`\n[${message.from}]: ${message.payload.body}`);
   }
 
   if (message.type === 'hello') {
     peerRegistry.updatePeer(peerId, {
       username: message.from,
+      port: message.payload.port,
     });
 
     console.log(`\n${message.from} joined from ${peerId}`);

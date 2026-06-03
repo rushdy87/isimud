@@ -1,5 +1,7 @@
 import net from 'net';
 
+import { MessageValidator } from '../core/messages/MessageValidator.js';
+
 export class TcpTransport {
   constructor({ eventBus }) {
     this.eventBus = eventBus;
@@ -78,9 +80,27 @@ export class TcpTransport {
     for (const rawMessage of messages) {
       try {
         const message = JSON.parse(rawMessage);
-        this.eventBus.emit('message:received', { peerId, message });
+
+        const isValid = MessageValidator.validate(message);
+
+        if (!isValid) {
+          this.eventBus.emit('message:invalid', {
+            peerId,
+            rawMessage,
+          });
+
+          continue;
+        }
+
+        this.eventBus.emit('message:received', {
+          peerId,
+          message,
+        });
       } catch {
-        this.eventBus.emit('message:invalid', { peerId, rawMessage });
+        this.eventBus.emit('message:invalid', {
+          peerId,
+          rawMessage,
+        });
       }
     }
   }
