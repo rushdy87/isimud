@@ -29,6 +29,10 @@ export class TcpTransport {
       });
     });
 
+    this.server.on('error', (error) => {
+      this.eventBus.emit('network:server_error', { port, error });
+    });
+
     this.server.listen(port, () => {
       this.eventBus.emit('network:listening', { port });
     });

@@ -14,7 +14,6 @@ const transport = new TcpTransport({ eventBus });
 const commandHandler = new CommandHandler({
   username,
   transport,
-  eventBus,
 });
 
 const terminalUI = new TerminalUI({ commandHandler });
@@ -56,6 +55,23 @@ eventBus.on('message:invalid', ({ peerId, rawMessage }) => {
 
 eventBus.on('network:error', ({ peerId, error }) => {
   console.log(`Network error with ${peerId}: ${error.message}`);
+});
+
+eventBus.on('network:server_error', ({ port, error }) => {
+  if (error.code === 'EADDRINUSE') {
+    console.log(`Port ${port} is already in use.`);
+    console.log(`Try another port, for example: ${port + 1}`);
+    process.exit(1);
+  }
+
+  if (error.code === 'EACCES') {
+    console.log(`Permission denied for port ${port}.`);
+    console.log('Try using a port greater than 1024.');
+    process.exit(1);
+  }
+
+  console.log(`Server error on port ${port}: ${error.message}`);
+  process.exit(1);
 });
 
 transport.listen(port);
