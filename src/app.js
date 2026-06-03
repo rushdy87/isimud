@@ -3,17 +3,21 @@ import { TcpTransport } from './network/TcpTransport.js';
 import { CommandHandler } from './commands/CommandHandler.js';
 import { TerminalUI } from './cli/TerminalUI.js';
 import { MessageFactory } from './core/messages/MessageFactory.js';
+import { PeerRegistry } from './core/peers/PeerRegistry.js';
 
 const username = process.argv[2] || 'anonymous';
 const port = Number(process.argv[3]) || 4000;
 
 const eventBus = new EventBus();
+const peerRegistry = new PeerRegistry();
 
 const transport = new TcpTransport({ eventBus });
 
 const commandHandler = new CommandHandler({
   username,
+  port,
   transport,
+  peerRegistry,
 });
 
 const terminalUI = new TerminalUI({ commandHandler });
@@ -24,6 +28,10 @@ eventBus.on('network:listening', ({ port }) => {
 });
 
 eventBus.on('peer:connected', ({ peerId }) => {
+  peerRegistry.addPeer({
+    peerId,
+  });
+
   console.log(`Peer connected: ${peerId}`);
 
   const helloMessage = MessageFactory.createHelloMessage({
@@ -34,6 +42,7 @@ eventBus.on('peer:connected', ({ peerId }) => {
 });
 
 eventBus.on('peer:disconnected', ({ peerId }) => {
+  peerRegistry.removePeer(peerId);
   console.log(`Peer disconnected: ${peerId}`);
 });
 
@@ -43,6 +52,10 @@ eventBus.on('message:received', ({ peerId, message }) => {
   }
 
   if (message.type === 'hello') {
+    peerRegistry.updatePeer(peerId, {
+      username: message.from,
+    });
+
     console.log(`\n${message.from} joined from ${peerId}`);
   }
 

@@ -1,0 +1,22 @@
+export class PeersCommand {
+  constructor({ peerRegistry }) {
+    this.peerRegistry = peerRegistry;
+  }
+
+  execute() {
+    const peers = this.peerRegistry.getAllPeers();
+
+    if (peers.length === 0) {
+      console.log('No connected peers.');
+      return;
+    }
+
+    console.log('\nConnected peers:');
+
+    for (const peer of peers) {
+      console.log(
+        `- ${peer.username} | ${peer.peerId} | status: ${peer.status} | connectedAt: ${peer.connectedAt}`,
+      );
+    }
+  }
+}

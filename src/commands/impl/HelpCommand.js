@@ -4,6 +4,8 @@ export class HelpCommand {
 Commands:
   /connect <host> <port>   Connect to another peer
   /send <message>          Send message to all connected peers
+  /peers                   Show connected peers
+  /whoami                  Show current peer info
   /help                    Show commands
 `);
   }
