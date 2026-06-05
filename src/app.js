@@ -1,10 +1,11 @@
 import { EventBus } from './core/events/EventBus.js';
+import { MessageFactory } from './core/messages/MessageFactory.js';
+import { PeerRegistry } from './core/peers/PeerRegistry.js';
+import { LocalIdentity } from './core/identity/LocalIdentity.js';
 import { TcpTransport } from './network/TcpTransport.js';
 import { UdpDiscovery } from './network/UdpDiscovery.js';
 import { CommandHandler } from './commands/CommandHandler.js';
 import { TerminalUI } from './cli/TerminalUI.js';
-import { MessageFactory } from './core/messages/MessageFactory.js';
-import { PeerRegistry } from './core/peers/PeerRegistry.js';
 
 const username = process.argv[2] || 'anonymous';
 const port = Number(process.argv[3]) || 4000;
@@ -13,14 +14,18 @@ const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
 
 const transport = new TcpTransport({ eventBus });
-const discovery = new UdpDiscovery({
+const identity = new LocalIdentity({
   username,
   tcpPort: port,
+});
+
+const discovery = new UdpDiscovery({
+  identity,
   eventBus,
 });
 
 const commandHandler = new CommandHandler({
-  username,
+  identity,
   port,
   transport,
   peerRegistry,
@@ -34,47 +39,46 @@ eventBus.on('network:listening', ({ port }) => {
 });
 
 eventBus.on('peer:connected', ({ peerId }) => {
-  const existingPeer = peerRegistry.getPeer(peerId);
-
-  if (existingPeer) {
-    peerRegistry.updatePeer(peerId, {
-      status: 'connected',
-      connectedAt: new Date().toISOString(),
-    });
-  } else {
-    peerRegistry.addPeer({
-      peerId,
-      status: 'connected',
-    });
-  }
-
   console.log(`Peer connected: ${peerId}`);
 
   const helloMessage = MessageFactory.createHelloMessage({
-    from: username,
-    port,
+    identity,
   });
 
   transport.sendToAll(helloMessage);
 });
 
 eventBus.on('peer:disconnected', ({ peerId }) => {
-  peerRegistry.removePeer(peerId);
   console.log(`Peer disconnected: ${peerId}`);
 });
 
 eventBus.on('message:received', ({ peerId, message }) => {
   if (message.type === 'chat_message') {
-    console.log(`\n[${message.from}]: ${message.payload.body}`);
+    console.log(`\n[${message.from.username}]: ${message.payload.body}`);
   }
 
   if (message.type === 'hello') {
-    peerRegistry.updatePeer(peerId, {
-      username: message.from,
-      port: message.payload.port,
-    });
+    const remoteNodeId = message.from.nodeId;
 
-    console.log(`\n${message.from} joined from ${peerId}`);
+    const existingPeer = peerRegistry.getPeer(remoteNodeId);
+
+    if (existingPeer) {
+      peerRegistry.updatePeer(remoteNodeId, {
+        username: message.from.username,
+        port: message.payload.tcpPort,
+        status: 'connected',
+        connectedAt: new Date().toISOString(),
+      });
+    } else {
+      peerRegistry.addPeer({
+        nodeId: remoteNodeId,
+        username: message.from.username,
+        port: message.payload.tcpPort,
+        status: 'connected',
+      });
+    }
+
+    console.log(`\n${message.from.username} joined`);
   }
 
   terminalUI.rl.prompt();
@@ -109,33 +113,35 @@ eventBus.on('discovery:listening', ({ port }) => {
   console.log(`UDP discovery listening on port ${port}`);
 });
 
-eventBus.on('peer:discovered', ({ username, host, port, discoveredAt }) => {
-  const peerId = `${host}:${port}`;
+eventBus.on(
+  'peer:discovered',
+  ({ nodeId, username, host, port, discoveredAt }) => {
+    const existingPeer = peerRegistry.getPeer(nodeId);
 
-  const existingPeer = peerRegistry.getPeer(peerId);
+    if (existingPeer) {
+      peerRegistry.updatePeer(nodeId, {
+        username,
+        host,
+        port,
+        discoveredAt,
+        status:
+          existingPeer.status === 'connected' ? 'connected' : 'discovered',
+      });
 
-  if (existingPeer) {
-    peerRegistry.updatePeer(peerId, {
+      return;
+    }
+
+    peerRegistry.addPeer({
+      nodeId,
       username,
       host,
       port,
-      discoveredAt,
-      status: existingPeer.status === 'connected' ? 'connected' : 'discovered',
+      status: 'discovered',
     });
 
-    return;
-  }
-
-  peerRegistry.addPeer({
-    peerId,
-    username,
-    host,
-    port,
-    status: 'discovered',
-  });
-
-  console.log(`Discovered peer: ${username} at ${host}:${port}`);
-});
+    console.log(`Discovered peer: ${username} at ${host}:${port}`);
+  },
+);
 
 eventBus.on('discovery:error', ({ error }) => {
   console.log(`Discovery error: ${error.message}`);

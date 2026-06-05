@@ -4,15 +4,13 @@ import { MessageParser } from '../core/parsers/MessageParser.js';
 
 export class UdpDiscovery {
   constructor({
-    username,
-    tcpPort,
+    identity,
     eventBus,
     discoveryPort = 55555,
     broadcastAddress = '192.168.100.251', //In the future change this to broadcast '255.255.255.255'
     announceIntervalMs = 5000,
   }) {
-    this.username = username;
-    this.tcpPort = tcpPort;
+    this.identity = identity;
     this.eventBus = eventBus;
     this.discoveryPort = discoveryPort;
     this.broadcastAddress = broadcastAddress;
@@ -54,8 +52,7 @@ export class UdpDiscovery {
 
   announce() {
     const message = MessageFactory.createPeerAnnounceMessage({
-      from: this.username,
-      port: this.tcpPort,
+      identity: this.identity,
     });
 
     const serializedMessage = Buffer.from(JSON.stringify(message) + '\n');
@@ -89,17 +86,15 @@ export class UdpDiscovery {
         continue;
       }
 
-      if (
-        message.from === this.username &&
-        message.payload.port === this.tcpPort
-      ) {
+      if (message.from.nodeId === this.identity.nodeId) {
         return;
       }
 
       this.eventBus.emit('peer:discovered', {
-        username: message.from,
+        nodeId: message.from.nodeId,
+        username: message.from.username,
         host: remoteInfo.address,
-        port: message.payload.port,
+        port: message.payload.tcpPort,
         discoveredAt: new Date().toISOString(),
       });
     }

@@ -1,8 +1,8 @@
 import { MessageFactory } from '../../core/messages/MessageFactory.js';
 
 export class SendCommand {
-  constructor({ username, transport }) {
-    this.username = username;
+  constructor({ identity, transport }) {
+    this.identity = identity;
     this.transport = transport;
   }
 
@@ -15,7 +15,7 @@ export class SendCommand {
     }
 
     const message = MessageFactory.createChatMessage({
-      from: this.username,
+      identity: this.identity,
       body,
     });
 

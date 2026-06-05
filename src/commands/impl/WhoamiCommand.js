@@ -1,14 +1,14 @@
 export class WhoamiCommand {
-  constructor({ username, port }) {
-    this.username = username;
-    this.port = port;
+  constructor({ identity }) {
+    this.identity = identity;
   }
 
   execute() {
     console.log(`
 You are:
-  username: ${this.username}
-  port: ${this.port}
+  nodeId: ${this.identity.nodeId}
+  username: ${this.identity.username}
+  tcpPort: ${this.identity.tcpPort}
 `);
   }
 }

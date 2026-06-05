@@ -4,29 +4,35 @@ import { MessageTypes } from './MessageTypes.js';
 export class MessageFactory {
   static createBaseMessage({ type, from, payload = {} }) {
     return {
-      id: randomUUID(), // Unique identifier for the message
-      version: 1, // Versioning for future compatibility
-      type, // Type of the message (e.g., 'hello', 'chat_message', 'system')
-      from, // Sender of the message
-      payload, // Additional data specific to the message type
-      timestamp: new Date().toISOString(), // Time when the message was created
+      id: randomUUID(),
+      version: 1,
+      type,
+      from,
+      payload,
+      timestamp: new Date().toISOString(),
     };
   }
 
-  static createHelloMessage({ from, port }) {
+  static createHelloMessage({ identity }) {
     return this.createBaseMessage({
       type: MessageTypes.HELLO,
-      from,
+      from: {
+        nodeId: identity.nodeId,
+        username: identity.username,
+      },
       payload: {
-        port,
+        tcpPort: identity.tcpPort,
       },
     });
   }
 
-  static createChatMessage({ from, body }) {
+  static createChatMessage({ identity, body }) {
     return this.createBaseMessage({
       type: MessageTypes.CHAT_MESSAGE,
-      from,
+      from: {
+        nodeId: identity.nodeId,
+        username: identity.username,
+      },
       payload: {
         body,
       },
@@ -43,12 +49,15 @@ export class MessageFactory {
     });
   }
 
-  static createPeerAnnounceMessage({ from, port }) {
+  static createPeerAnnounceMessage({ identity }) {
     return this.createBaseMessage({
       type: MessageTypes.PEER_ANNOUNCE,
-      from,
+      from: {
+        nodeId: identity.nodeId,
+        username: identity.username,
+      },
       payload: {
-        port,
+        tcpPort: identity.tcpPort,
       },
     });
   }
