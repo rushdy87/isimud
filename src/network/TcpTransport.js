@@ -94,4 +94,18 @@ export class TcpTransport {
       });
     }
   }
+
+  sendToConnection(connectionId, message) {
+    const socket = this.connections.get(connectionId);
+
+    if (!socket) {
+      return false;
+    }
+
+    const serializedMessage = JSON.stringify(message) + '\n';
+
+    socket.write(serializedMessage);
+
+    return true;
+  }
 }

@@ -6,6 +6,7 @@ import { PeersCommand } from './impl/PeersCommand.js';
 import { WhoamiCommand } from './impl/WhoamiCommand.js';
 import { ConnectPeerCommand } from './impl/ConnectPeerCommand.js';
 import { ConnectionsCommand } from './impl/ConnectionsCommand.js';
+import { SendToCommand } from './impl/SendToCommand.js';
 
 export class CommandHandler {
   constructor({ identity, port, transport, peerRegistry, connectionRegistry }) {
@@ -40,6 +41,16 @@ export class CommandHandler {
       new SendCommand({
         identity,
         transport,
+      }),
+    );
+
+    this.commands.set(
+      '/send-to',
+      new SendToCommand({
+        identity,
+        transport,
+        peerRegistry,
+        connectionRegistry,
       }),
     );
 
