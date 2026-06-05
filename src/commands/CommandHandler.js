@@ -5,9 +5,10 @@ import { UnknownCommand } from './impl/UnknownCommand.js';
 import { PeersCommand } from './impl/PeersCommand.js';
 import { WhoamiCommand } from './impl/WhoamiCommand.js';
 import { ConnectPeerCommand } from './impl/ConnectPeerCommand.js';
+import { ConnectionsCommand } from './impl/ConnectionsCommand.js';
 
 export class CommandHandler {
-  constructor({ identity, port, transport, peerRegistry }) {
+  constructor({ identity, port, transport, peerRegistry, connectionRegistry }) {
     this.commands = new Map();
     this.unknownCommand = new UnknownCommand();
 
@@ -16,10 +17,17 @@ export class CommandHandler {
       port,
       transport,
       peerRegistry,
+      connectionRegistry,
     });
   }
 
-  registerCommands({ identity, port, transport, peerRegistry }) {
+  registerCommands({
+    identity,
+    port,
+    transport,
+    peerRegistry,
+    connectionRegistry,
+  }) {
     this.commands.set(
       '/connect',
       new ConnectCommand({
@@ -57,6 +65,13 @@ export class CommandHandler {
       new ConnectPeerCommand({
         transport,
         peerRegistry,
+      }),
+    );
+
+    this.commands.set(
+      '/connections',
+      new ConnectionsCommand({
+        connectionRegistry,
       }),
     );
   }

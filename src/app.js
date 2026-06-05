@@ -1,4 +1,5 @@
 import { EventBus } from './core/events/EventBus.js';
+import { ConnectionRegistry } from './core/connections/ConnectionRegistry.js';
 import { MessageFactory } from './core/messages/MessageFactory.js';
 import { PeerRegistry } from './core/peers/PeerRegistry.js';
 import { LocalIdentity } from './core/identity/LocalIdentity.js';
@@ -12,6 +13,7 @@ const port = Number(process.argv[3]) || 4000;
 
 const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
+const connectionRegistry = new ConnectionRegistry();
 
 const transport = new TcpTransport({ eventBus });
 const identity = new LocalIdentity({
@@ -29,6 +31,7 @@ const commandHandler = new CommandHandler({
   port,
   transport,
   peerRegistry,
+  connectionRegistry,
 });
 
 const terminalUI = new TerminalUI({ commandHandler });
@@ -39,6 +42,10 @@ eventBus.on('network:listening', ({ port }) => {
 });
 
 eventBus.on('peer:connected', ({ peerId }) => {
+  connectionRegistry.addConnection({
+    connectionId: peerId,
+  });
+
   console.log(`Peer connected: ${peerId}`);
 
   const helloMessage = MessageFactory.createHelloMessage({
@@ -49,6 +56,15 @@ eventBus.on('peer:connected', ({ peerId }) => {
 });
 
 eventBus.on('peer:disconnected', ({ peerId }) => {
+  const connection = connectionRegistry.removeConnection(peerId);
+
+  if (connection?.nodeId) {
+    peerRegistry.updatePeer(connection.nodeId, {
+      status: 'disconnected',
+      disconnectedAt: new Date().toISOString(),
+    });
+  }
+
   console.log(`Peer disconnected: ${peerId}`);
 });
 
@@ -59,6 +75,11 @@ eventBus.on('message:received', ({ peerId, message }) => {
 
   if (message.type === 'hello') {
     const remoteNodeId = message.from.nodeId;
+
+    connectionRegistry.bindNode({
+      connectionId: peerId,
+      nodeId: remoteNodeId,
+    });
 
     const existingPeer = peerRegistry.getPeer(remoteNodeId);
 
