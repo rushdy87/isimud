@@ -4,6 +4,7 @@ import { HelpCommand } from './impl/HelpCommand.js';
 import { UnknownCommand } from './impl/UnknownCommand.js';
 import { PeersCommand } from './impl/PeersCommand.js';
 import { WhoamiCommand } from './impl/WhoamiCommand.js';
+import { ConnectPeerCommand } from './impl/ConnectPeerCommand.js';
 
 export class CommandHandler {
   constructor({ username, port, transport, peerRegistry }) {
@@ -49,6 +50,14 @@ export class CommandHandler {
       new WhoamiCommand({
         username,
         port,
+      }),
+    );
+
+    this.commands.set(
+      '/connect-peer',
+      new ConnectPeerCommand({
+        transport,
+        peerRegistry,
       }),
     );
   }

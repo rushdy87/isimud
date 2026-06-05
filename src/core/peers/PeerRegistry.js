@@ -65,4 +65,14 @@ export class PeerRegistry {
   count() {
     return this.peers.size;
   }
+
+  findPeerByUsername(username) {
+    const normalizedUsername = username.toLowerCase();
+
+    return (
+      this.getAllPeers().find(
+        (peer) => peer.username.toLowerCase() === normalizedUsername,
+      ) || null
+    );
+  }
 }

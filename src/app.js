@@ -34,9 +34,19 @@ eventBus.on('network:listening', ({ port }) => {
 });
 
 eventBus.on('peer:connected', ({ peerId }) => {
-  peerRegistry.addPeer({
-    peerId,
-  });
+  const existingPeer = peerRegistry.getPeer(peerId);
+
+  if (existingPeer) {
+    peerRegistry.updatePeer(peerId, {
+      status: 'connected',
+      connectedAt: new Date().toISOString(),
+    });
+  } else {
+    peerRegistry.addPeer({
+      peerId,
+      status: 'connected',
+    });
+  }
 
   console.log(`Peer connected: ${peerId}`);
 
@@ -44,6 +54,7 @@ eventBus.on('peer:connected', ({ peerId }) => {
     from: username,
     port,
   });
+
   transport.sendToAll(helloMessage);
 });
 
