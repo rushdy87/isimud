@@ -1,5 +1,6 @@
 import { EventBus } from './core/events/EventBus.js';
 import { TcpTransport } from './network/TcpTransport.js';
+import { UdpDiscovery } from './network/UdpDiscovery.js';
 import { CommandHandler } from './commands/CommandHandler.js';
 import { TerminalUI } from './cli/TerminalUI.js';
 import { MessageFactory } from './core/messages/MessageFactory.js';
@@ -12,6 +13,11 @@ const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
 
 const transport = new TcpTransport({ eventBus });
+const discovery = new UdpDiscovery({
+  username,
+  tcpPort: port,
+  eventBus,
+});
 
 const commandHandler = new CommandHandler({
   username,
@@ -88,5 +94,42 @@ eventBus.on('network:server_error', ({ port, error }) => {
   process.exit(1);
 });
 
+eventBus.on('discovery:listening', ({ port }) => {
+  console.log(`UDP discovery listening on port ${port}`);
+});
+
+eventBus.on('peer:discovered', ({ username, host, port, discoveredAt }) => {
+  const peerId = `${host}:${port}`;
+
+  const existingPeer = peerRegistry.getPeer(peerId);
+
+  if (existingPeer) {
+    peerRegistry.updatePeer(peerId, {
+      username,
+      host,
+      port,
+      discoveredAt,
+      status: existingPeer.status === 'connected' ? 'connected' : 'discovered',
+    });
+
+    return;
+  }
+
+  peerRegistry.addPeer({
+    peerId,
+    username,
+    host,
+    port,
+    status: 'discovered',
+  });
+
+  console.log(`Discovered peer: ${username} at ${host}:${port}`);
+});
+
+eventBus.on('discovery:error', ({ error }) => {
+  console.log(`Discovery error: ${error.message}`);
+});
+
 transport.listen(port);
+discovery.start();
 terminalUI.start();

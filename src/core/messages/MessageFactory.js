@@ -42,4 +42,14 @@ export class MessageFactory {
       },
     });
   }
+
+  static createPeerAnnounceMessage({ from, port }) {
+    return this.createBaseMessage({
+      type: MessageTypes.PEER_ANNOUNCE,
+      from,
+      payload: {
+        port,
+      },
+    });
+  }
 }

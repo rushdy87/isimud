@@ -3,14 +3,21 @@ export class PeerRegistry {
     this.peers = new Map();
   }
 
-  addPeer({ peerId, username = 'unknown', host = null, port = null }) {
+  addPeer({
+    peerId,
+    username = 'unknown',
+    host = null,
+    port = null,
+    status = 'connected',
+  }) {
     const peer = {
       peerId,
       username,
       host,
       port,
-      status: 'connected',
-      connectedAt: new Date().toISOString(),
+      status,
+      connectedAt: status === 'connected' ? new Date().toISOString() : null,
+      discoveredAt: status === 'discovered' ? new Date().toISOString() : null,
     };
 
     this.peers.set(peerId, peer);
