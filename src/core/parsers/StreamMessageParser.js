@@ -1,6 +1,6 @@
 import { MessageValidator } from '../messages/MessageValidator.js';
 
-export class MessageParser {
+export class StreamMessageParser {
   constructor() {
     this.buffer = '';
   }

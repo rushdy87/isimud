@@ -1,6 +1,6 @@
 import net from 'net';
 
-import { MessageParser } from '../core/parsers/MessageParser.js';
+import { StreamMessageParser } from '../core/parsers/StreamMessageParser.js';
 
 export class TcpTransport {
   constructor({ eventBus }) {
@@ -16,7 +16,7 @@ export class TcpTransport {
 
       this.connections.set(peerId, socket);
 
-      this.parsers.set(peerId, new MessageParser());
+      this.parsers.set(peerId, new StreamMessageParser());
 
       this.eventBus.emit('peer:connected', { peerId });
 
@@ -49,7 +49,7 @@ export class TcpTransport {
 
       this.connections.set(peerId, socket);
 
-      this.parsers.set(peerId, new MessageParser());
+      this.parsers.set(peerId, new StreamMessageParser());
 
       this.eventBus.emit('peer:connected', { peerId });
     });

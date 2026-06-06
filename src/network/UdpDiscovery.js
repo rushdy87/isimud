@@ -1,6 +1,6 @@
 import dgram from 'dgram';
 import { MessageFactory } from '../core/messages/MessageFactory.js';
-import { MessageParser } from '../core/parsers/MessageParser.js';
+import { DatagramMessageParser } from '../core/parsers/DatagramMessageParser.js';
 
 export class UdpDiscovery {
   constructor({
@@ -21,7 +21,7 @@ export class UdpDiscovery {
       reuseAddr: true,
     });
 
-    this.parser = new MessageParser();
+    this.parser = new DatagramMessageParser();
 
     this.intervalId = null;
   }
