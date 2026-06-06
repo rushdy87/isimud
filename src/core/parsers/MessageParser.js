@@ -38,3 +38,7 @@ export class MessageParser {
     return messages;
   }
 }
+
+// TODO: We will use "Length-Prefixed Messages" in the future to handle message framing properly over TCP
+// For now, we will assume that each message is sent as a single JSON string followed by a newline character
+// This is a simple approach for demonstration purposes, but it may not be reliable in all cases (e.g., if messages are large or if multiple messages are sent in quick succession)
