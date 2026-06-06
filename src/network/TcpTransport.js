@@ -7,6 +7,7 @@ export class TcpTransport {
     this.eventBus = eventBus;
     this.server = null;
     this.connections = new Map();
+    this.parsers = new Map();
   }
 
   listen(port) {
@@ -14,6 +15,8 @@ export class TcpTransport {
       const peerId = `${socket.remoteAddress}:${socket.remotePort}`;
 
       this.connections.set(peerId, socket);
+
+      this.parsers.set(peerId, new MessageParser());
 
       this.eventBus.emit('peer:connected', { peerId });
 
@@ -46,6 +49,8 @@ export class TcpTransport {
 
       this.connections.set(peerId, socket);
 
+      this.parsers.set(peerId, new MessageParser());
+
       this.eventBus.emit('peer:connected', { peerId });
     });
 
@@ -57,6 +62,7 @@ export class TcpTransport {
     socket.on('close', () => {
       const peerId = `${host}:${port}`;
       this.connections.delete(peerId);
+      this.parsers.delete(peerId);
       this.eventBus.emit('peer:disconnected', { peerId });
     });
 
@@ -75,7 +81,19 @@ export class TcpTransport {
   }
 
   handleIncomingData(peerId, data) {
-    const results = MessageParser.parse(data);
+    const parser = this.parsers.get(peerId);
+
+    if (!parser) {
+      this.eventBus.emit('message:invalid', {
+        peerId,
+        error: 'No parser found for connection',
+        rawMessage: data.toString(),
+      });
+
+      return;
+    }
+
+    const results = parser.parse(data);
 
     for (const result of results) {
       if (!result.success) {

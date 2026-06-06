@@ -1,19 +1,33 @@
 import { MessageValidator } from '../messages/MessageValidator.js';
 
 export class MessageParser {
-  static parse(rawData) {
-    const messages = [];
+  constructor() {
+    this.buffer = '';
+  }
 
-    const chunks = rawData.toString().trim().split('\n');
+  parse(data) {
+    this.buffer += data.toString();
 
-    for (const rawMessage of chunks) {
+    const lines = this.buffer.split('\n');
+
+    this.buffer = lines.pop() || '';
+
+    const results = [];
+
+    for (const line of lines) {
+      const rawMessage = line.trim();
+
+      if (!rawMessage) {
+        continue;
+      }
+
       try {
-        const parsedMessage = JSON.parse(rawMessage);
+        const message = JSON.parse(rawMessage);
 
-        const isValid = MessageValidator.validate(parsedMessage);
+        const isValid = MessageValidator.validate(message);
 
         if (!isValid) {
-          messages.push({
+          results.push({
             success: false,
             error: 'Invalid message structure',
             rawMessage,
@@ -22,12 +36,12 @@ export class MessageParser {
           continue;
         }
 
-        messages.push({
+        results.push({
           success: true,
-          message: parsedMessage,
+          message,
         });
       } catch {
-        messages.push({
+        results.push({
           success: false,
           error: 'Invalid JSON',
           rawMessage,
@@ -35,10 +49,10 @@ export class MessageParser {
       }
     }
 
-    return messages;
+    return results;
+  }
+
+  clear() {
+    this.buffer = '';
   }
 }
-
-// TODO: We will use "Length-Prefixed Messages" in the future to handle message framing properly over TCP
-// For now, we will assume that each message is sent as a single JSON string followed by a newline character
-// This is a simple approach for demonstration purposes, but it may not be reliable in all cases (e.g., if messages are large or if multiple messages are sent in quick succession)

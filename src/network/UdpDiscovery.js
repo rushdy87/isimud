@@ -21,6 +21,8 @@ export class UdpDiscovery {
       reuseAddr: true,
     });
 
+    this.parser = new MessageParser();
+
     this.intervalId = null;
   }
 
@@ -67,7 +69,7 @@ export class UdpDiscovery {
   }
 
   handleIncomingMessage(data, remoteInfo) {
-    const results = MessageParser.parse(data);
+    const results = this.parser.parse(data);
 
     for (const result of results) {
       if (!result.success) {
