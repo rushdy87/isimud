@@ -7,7 +7,7 @@ export class UdpDiscovery {
     identity,
     eventBus,
     discoveryPort = 55555,
-    broadcastAddress = '192.168.100.251', //In the future change this to broadcast '255.255.255.255'
+    broadcastAddress = '255.255.255.255',
     announceIntervalMs = 5000,
   }) {
     this.identity = identity;

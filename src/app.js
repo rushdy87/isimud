@@ -1,3 +1,4 @@
+import { createAppConfig } from './config/appConfig.js';
 import { EventBus } from './core/events/EventBus.js';
 import { ConnectionRegistry } from './core/connections/ConnectionRegistry.js';
 import { MessageFactory } from './core/messages/MessageFactory.js';
@@ -8,27 +9,29 @@ import { UdpDiscovery } from './network/UdpDiscovery.js';
 import { CommandHandler } from './commands/CommandHandler.js';
 import { TerminalUI } from './cli/TerminalUI.js';
 
-const username = process.argv[2] || 'anonymous';
-const port = Number(process.argv[3]) || 4000;
-
+const config = createAppConfig();
 const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
 const connectionRegistry = new ConnectionRegistry();
 
-const transport = new TcpTransport({ eventBus });
 const identity = new LocalIdentity({
-  username,
-  tcpPort: port,
+  username: config.identity.username,
+  tcpPort: config.identity.tcpPort,
 });
 
 const discovery = new UdpDiscovery({
   identity,
   eventBus,
+  discoveryPort: config.discovery.port,
+  broadcastAddress: config.discovery.broadcastAddress,
+  announceIntervalMs: config.discovery.announceIntervalMs,
 });
+
+const transport = new TcpTransport({ eventBus });
 
 const commandHandler = new CommandHandler({
   identity,
-  port,
+  port: config.network.tcpPort,
   transport,
   peerRegistry,
   connectionRegistry,
@@ -168,6 +171,6 @@ eventBus.on('discovery:error', ({ error }) => {
   console.log(`Discovery error: ${error.message}`);
 });
 
-transport.listen(port);
+transport.listen(config.network.tcpPort);
 discovery.start();
 terminalUI.start();
