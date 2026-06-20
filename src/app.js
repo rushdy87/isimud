@@ -3,6 +3,7 @@ import { EventBus } from './core/events/EventBus.js';
 import { ConnectionRegistry } from './core/connections/ConnectionRegistry.js';
 import { MessageFactory } from './core/messages/MessageFactory.js';
 import { PeerRegistry } from './core/peers/PeerRegistry.js';
+import { IdentityStore } from './core/identity/IdentityStore.js';
 import { LocalIdentity } from './core/identity/LocalIdentity.js';
 import { TcpTransport } from './network/TcpTransport.js';
 import { UdpDiscovery } from './network/UdpDiscovery.js';
@@ -14,10 +15,14 @@ const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
 const connectionRegistry = new ConnectionRegistry();
 
-const identity = new LocalIdentity({
+const identityStore = new IdentityStore();
+
+const savedIdentity = identityStore.loadOrCreate({
   username: config.identity.username,
   tcpPort: config.identity.tcpPort,
 });
+
+const identity = new LocalIdentity(savedIdentity);
 
 const discovery = new UdpDiscovery({
   identity,

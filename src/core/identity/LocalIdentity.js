@@ -1,11 +1,8 @@
-import { randomUUID } from 'crypto';
-
 export class LocalIdentity {
-  constructor({ username, tcpPort }) {
-    this.nodeId = randomUUID();
+  constructor({ nodeId, username, tcpPort }) {
+    this.nodeId = nodeId;
     this.username = username;
     this.tcpPort = tcpPort;
-    this.createdAt = new Date().toISOString();
   }
 
   toJSON() {
@@ -13,7 +10,6 @@ export class LocalIdentity {
       nodeId: this.nodeId,
       username: this.username,
       tcpPort: this.tcpPort,
-      createdAt: this.createdAt,
     };
   }
 }
