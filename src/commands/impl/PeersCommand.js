@@ -15,7 +15,7 @@ export class PeersCommand {
 
     for (const peer of peers) {
       console.log(
-        `- ${peer.username} | ${peer.host}:${peer.port} | nodeId: ${peer.nodeId} | status: ${peer.status} | connectedAt: ${peer.connectedAt}`,
+        `- ${peer.username} | ${peer.host}:${peer.tcpPort} | nodeId: ${peer.nodeId} | status: ${peer.status} | connectedAt: ${peer.connectedAt}`,
       );
     }
   }

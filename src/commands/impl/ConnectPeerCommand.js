@@ -20,7 +20,7 @@ export class ConnectPeerCommand {
       return;
     }
 
-    if (!peer.host || !peer.port) {
+    if (!peer.host || !peer.tcpPort) {
       console.log(`Peer ${username} has no host or port info.`);
       return;
     }
@@ -30,6 +30,6 @@ export class ConnectPeerCommand {
       return;
     }
 
-    this.transport.connect(peer.host, peer.port);
+    this.transport.connect(peer.host, peer.tcpPort);
   }
 }

@@ -15,7 +15,9 @@ const eventBus = new EventBus();
 const peerRegistry = new PeerRegistry();
 const connectionRegistry = new ConnectionRegistry();
 
-const identityStore = new IdentityStore();
+const identityStore = new IdentityStore({
+  filePath: `.isimud/${config.identity.username}.identity.json`,
+});
 
 const savedIdentity = identityStore.loadOrCreate({
   username: config.identity.username,
@@ -94,16 +96,19 @@ eventBus.on('message:received', ({ peerId, message }) => {
     if (existingPeer) {
       peerRegistry.updatePeer(remoteNodeId, {
         username: message.from.username,
-        port: message.payload.tcpPort,
+        host: peerId.split(':')[0],
+        tcpPort: message.payload.tcpPort,
         status: 'connected',
         connectedAt: new Date().toISOString(),
       });
     } else {
       peerRegistry.addPeer({
-        nodeId: remoteNodeId,
+        nodeId: message.from.nodeId,
         username: message.from.username,
-        port: message.payload.tcpPort,
+        host: peerId.split(':')[0],
+        tcpPort: message.payload.tcpPort,
         status: 'connected',
+        connectedAt: new Date().toISOString(),
       });
     }
 
@@ -151,7 +156,7 @@ eventBus.on(
       peerRegistry.updatePeer(nodeId, {
         username,
         host,
-        port,
+        tcpPort: port,
         discoveredAt,
         status:
           existingPeer.status === 'connected' ? 'connected' : 'discovered',
@@ -164,7 +169,8 @@ eventBus.on(
       nodeId,
       username,
       host,
-      port,
+      tcpPort: port,
+      discoveredAt,
       status: 'discovered',
     });
 

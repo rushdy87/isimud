@@ -5,16 +5,18 @@ export class PeerRegistry {
 
   addPeer({
     nodeId,
-    username = 'unknown',
+    username,
     host = null,
-    port = null,
-    status = 'connected',
+    tcpPort = null,
+    status = 'discovered',
+    discoveredAt = null,
+    connectedAt = null,
   }) {
     const peer = {
       nodeId,
       username,
       host,
-      port,
+      tcpPort,
       status,
       connectedAt: status === 'connected' ? new Date().toISOString() : null,
       discoveredAt: status === 'discovered' ? new Date().toISOString() : null,
