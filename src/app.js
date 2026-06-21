@@ -30,6 +30,7 @@ const discovery = new UdpDiscovery({
   identity,
   eventBus,
   discoveryPort: config.discovery.port,
+  targetPorts: config.discovery.targetPorts,
   broadcastAddress: config.discovery.broadcastAddress,
   announceIntervalMs: config.discovery.announceIntervalMs,
 });

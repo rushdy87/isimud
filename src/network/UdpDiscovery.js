@@ -7,12 +7,14 @@ export class UdpDiscovery {
     identity,
     eventBus,
     discoveryPort = 55555,
+    targetPorts = [55555, 55556, 55557],
     broadcastAddress = '255.255.255.255',
     announceIntervalMs = 5000,
   }) {
     this.identity = identity;
     this.eventBus = eventBus;
     this.discoveryPort = discoveryPort;
+    this.targetPorts = targetPorts;
     this.broadcastAddress = broadcastAddress;
     this.announceIntervalMs = announceIntervalMs;
 
@@ -59,13 +61,26 @@ export class UdpDiscovery {
 
     const serializedMessage = Buffer.from(JSON.stringify(message) + '\n');
 
-    this.socket.send(
-      serializedMessage,
-      0,
-      serializedMessage.length,
-      this.discoveryPort,
-      this.broadcastAddress,
-    );
+    // this.socket.send(
+    //   serializedMessage,
+    //   0,
+    //   serializedMessage.length,
+    //   this.discoveryPort,
+    //   this.broadcastAddress,
+    // );
+    const targets = [this.broadcastAddress, '127.0.0.1'];
+
+    for (const target of targets) {
+      for (const port of this.targetPorts) {
+        this.socket.send(
+          serializedMessage,
+          0,
+          serializedMessage.length,
+          port,
+          target,
+        );
+      }
+    }
   }
 
   handleIncomingMessage(data, remoteInfo) {
@@ -89,7 +104,7 @@ export class UdpDiscovery {
       }
 
       if (message.from.nodeId === this.identity.nodeId) {
-        return;
+        continue;
       }
 
       this.eventBus.emit('peer:discovered', {
