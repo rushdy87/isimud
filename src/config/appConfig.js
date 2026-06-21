@@ -23,6 +23,7 @@ export function createAppConfig(argv = process.argv) {
         process.env.ISIMUD_BROADCAST_ADDRESS || '255.255.255.255',
       announceIntervalMs:
         Number(process.env.ISIMUD_ANNOUNCE_INTERVAL_MS) || 5000,
+      autoConnect: process.env.ISIMUD_AUTO_CONNECT === 'true',
     },
   };
 }

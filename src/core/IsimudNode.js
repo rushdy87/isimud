@@ -157,7 +157,11 @@ export class IsimudNode {
       });
     }
 
-    console.log(`\n${message.from.username} joined`);
+    const wasAlreadyConnected = existingPeer?.status === 'connected';
+
+    if (!wasAlreadyConnected) {
+      console.log(`\n${message.from.username} joined`);
+    }
   }
 
   #onMessageInvalid({ peerId, rawMessage }) {
@@ -199,7 +203,16 @@ export class IsimudNode {
         tcpPort: port,
         discoveredAt,
         status:
-          existingPeer.status === 'connected' ? 'connected' : 'discovered',
+          existingPeer.status === 'connected' ||
+          existingPeer.status === 'connecting'
+            ? existingPeer.status
+            : 'discovered',
+      });
+
+      this.#autoConnectToPeer({
+        nodeId,
+        host,
+        port,
       });
 
       return;
@@ -215,9 +228,45 @@ export class IsimudNode {
     });
 
     console.log(`Discovered peer: ${username} at ${host}:${port}`);
+
+    this.#autoConnectToPeer({
+      nodeId,
+      host,
+      port,
+    });
   }
 
   #onDiscoveryError({ error }) {
     console.log(`Discovery error: ${error.message}`);
+  }
+
+  #autoConnectToPeer({ nodeId, host, port }) {
+    if (!this.config.discovery.autoConnect) {
+      return;
+    }
+
+    const existingPeer = this.peerRegistry.getPeer(nodeId);
+
+    if (existingPeer?.status === 'connected') {
+      return;
+    }
+
+    if (existingPeer?.status === 'connecting') {
+      return;
+    }
+
+    const alreadyConnected = this.connectionRegistry
+      .getAllConnections()
+      .some((connection) => connection.nodeId === nodeId);
+
+    if (alreadyConnected) {
+      return;
+    }
+
+    this.peerRegistry.updatePeer(nodeId, {
+      status: 'connecting',
+    });
+
+    this.transport.connect(host, port);
   }
 }
