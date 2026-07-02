@@ -1,106 +1,29 @@
-import { ConnectCommand } from './impl/ConnectCommand.js';
-import { SendCommand } from './impl/SendCommand.js';
-import { HelpCommand } from './impl/HelpCommand.js';
 import { UnknownCommand } from './impl/UnknownCommand.js';
-import { PeersCommand } from './impl/PeersCommand.js';
-import { WhoamiCommand } from './impl/WhoamiCommand.js';
-import { ConnectPeerCommand } from './impl/ConnectPeerCommand.js';
-import { ConnectionsCommand } from './impl/ConnectionsCommand.js';
-import { SendToCommand } from './impl/SendToCommand.js';
 
 export class CommandHandler {
-  constructor({ identity, port, transport, peerRegistry, connectionRegistry }) {
-    this.commands = new Map();
+  constructor(commandRegistry) {
+    this.commandRegistry = commandRegistry;
     this.unknownCommand = new UnknownCommand();
-
-    this.registerCommands({
-      identity,
-      port,
-      transport,
-      peerRegistry,
-      connectionRegistry,
-    });
   }
 
-  registerCommands({
-    identity,
-    port,
-    transport,
-    peerRegistry,
-    connectionRegistry,
-  }) {
-    this.commands.set(
-      '/connect',
-      new ConnectCommand({
-        transport,
-      }),
-    );
-
-    this.commands.set(
-      '/send',
-      new SendCommand({
-        identity,
-        transport,
-      }),
-    );
-
-    this.commands.set(
-      '/send-to',
-      new SendToCommand({
-        identity,
-        transport,
-        peerRegistry,
-        connectionRegistry,
-      }),
-    );
-
-    this.commands.set('/help', new HelpCommand());
-
-    this.commands.set(
-      '/peers',
-      new PeersCommand({
-        peerRegistry,
-      }),
-    );
-
-    this.commands.set(
-      '/whoami',
-      new WhoamiCommand({
-        identity,
-        port,
-      }),
-    );
-
-    this.commands.set(
-      '/connect-peer',
-      new ConnectPeerCommand({
-        transport,
-        peerRegistry,
-      }),
-    );
-
-    this.commands.set(
-      '/connections',
-      new ConnectionsCommand({
-        connectionRegistry,
-      }),
-    );
-  }
-
-  handle(input) {
+  async handle(input) {
     const [commandName, ...args] = input.trim().split(' ');
 
     if (!commandName) {
       return;
     }
 
-    const command = this.commands.get(commandName);
+    const command = this.commandRegistry.get(commandName);
 
     if (!command) {
-      this.unknownCommand.execute(commandName);
+      await this.unknownCommand.execute(commandName);
       return;
     }
 
-    command.execute(args);
+    try {
+      await command.execute(args);
+    } catch (error) {
+      console.error(`Command failed: ${error.message}`);
+    }
   }
 }

@@ -7,6 +7,7 @@ import { MessageFactory } from './messages/MessageFactory.js';
 import { TcpTransport } from '../network/TcpTransport.js';
 import { UdpDiscovery } from '../network/UdpDiscovery.js';
 import { CommandHandler } from '../commands/CommandHandler.js';
+import { createCommandRegistry } from '../commands/createCommandRegistry.js';
 import { TerminalUI } from '../cli/TerminalUI.js';
 
 export class IsimudNode {
@@ -32,7 +33,7 @@ export class IsimudNode {
       announceIntervalMs: config.discovery.announceIntervalMs,
     });
 
-    this.commandHandler = new CommandHandler({
+    const commandRegistry = createCommandRegistry({
       identity: this.identity,
       port: config.network.tcpPort,
       transport: this.transport,
@@ -40,8 +41,10 @@ export class IsimudNode {
       connectionRegistry: this.connectionRegistry,
     });
 
+    const commandHandler = new CommandHandler(commandRegistry);
+
     this.terminalUI = new TerminalUI({
-      commandHandler: this.commandHandler,
+      commandHandler,
     });
 
     this.#registerEventHandlers();
