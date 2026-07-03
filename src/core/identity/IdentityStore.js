@@ -8,14 +8,19 @@ export class IdentityStore {
   }
 
   loadOrCreate({ username, tcpPort }) {
-    const identity = this.#readIdentity();
+    const existingIdentity = this.#readIdentity();
 
-    if (identity) {
-      return {
-        ...identity,
+    if (existingIdentity) {
+      const updatedIdentity = {
+        ...existingIdentity,
         username,
         tcpPort,
+        updatedAt: new Date().toISOString(),
       };
+
+      this.#writeIdentity(updatedIdentity);
+
+      return updatedIdentity;
     }
 
     const newIdentity = {
@@ -23,6 +28,7 @@ export class IdentityStore {
       username,
       tcpPort,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     this.#writeIdentity(newIdentity);
@@ -35,8 +41,12 @@ export class IdentityStore {
       return null;
     }
 
-    const raw = fs.readFileSync(this.filePath, 'utf8');
-    return JSON.parse(raw);
+    try {
+      const raw = fs.readFileSync(this.filePath, 'utf8');
+      return JSON.parse(raw);
+    } catch (error) {
+      throw new Error(`Failed to read identity file: ${error.message}`);
+    }
   }
 
   #writeIdentity(identity) {

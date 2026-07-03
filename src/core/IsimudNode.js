@@ -58,12 +58,12 @@ export class IsimudNode {
 
   #createIdentity() {
     const identityStore = new IdentityStore({
-      filePath: `.isimud/${this.config.identity.username}.identity.json`,
+      filePath: `.isimud/${this.config.identity.username}-${this.config.network.tcpPort}.identity.json`,
     });
 
     const savedIdentity = identityStore.loadOrCreate({
       username: this.config.identity.username,
-      tcpPort: this.config.identity.tcpPort,
+      tcpPort: this.config.network.tcpPort,
     });
 
     return new LocalIdentity(savedIdentity);
