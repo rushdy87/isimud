@@ -1,6 +1,7 @@
 import { EventBus } from './events/EventBus.js';
 import { ConnectionRegistry } from './connections/ConnectionRegistry.js';
 import { PeerRegistry } from './peers/PeerRegistry.js';
+import { PeerStatus } from './peers/PeerStatus.js';
 import { IdentityStore } from './identity/IdentityStore.js';
 import { LocalIdentity } from './identity/LocalIdentity.js';
 import { MessageFactory } from './messages/MessageFactory.js';
@@ -112,7 +113,7 @@ export class IsimudNode {
 
     if (connection?.nodeId) {
       this.peerRegistry.update(connection.nodeId, {
-        status: 'disconnected',
+        status: PeerStatus.DISCONNECTED,
         disconnectedAt: new Date().toISOString(),
       });
     }
@@ -148,11 +149,11 @@ export class IsimudNode {
       username: message.from.username,
       host: remoteHost,
       tcpPort: message.payload.tcpPort,
-      status: 'connected',
+      status: PeerStatus.CONNECTED,
       connectedAt: new Date().toISOString(),
     });
 
-    const wasAlreadyConnected = existingPeer?.status === 'connected';
+    const wasAlreadyConnected = existingPeer?.status === PeerStatus.CONNECTED;
 
     if (!wasAlreadyConnected) {
       console.log(`\n${message.from.username} joined`);
@@ -192,10 +193,10 @@ export class IsimudNode {
     const existingPeer = this.peerRegistry.getById(nodeId);
 
     const status =
-      existingPeer?.status === 'connected' ||
-      existingPeer?.status === 'connecting'
+      existingPeer?.status === PeerStatus.CONNECTED ||
+      existingPeer?.status === PeerStatus.CONNECTING
         ? existingPeer.status
-        : 'discovered';
+        : PeerStatus.DISCOVERED;
 
     this.peerRegistry.upsertPeer({
       nodeId,
@@ -228,11 +229,11 @@ export class IsimudNode {
 
     const existingPeer = this.peerRegistry.getById(nodeId);
 
-    if (existingPeer?.status === 'connected') {
+    if (existingPeer?.status === PeerStatus.CONNECTED) {
       return;
     }
 
-    if (existingPeer?.status === 'connecting') {
+    if (existingPeer?.status === PeerStatus.CONNECTING) {
       return;
     }
 
@@ -244,7 +245,7 @@ export class IsimudNode {
     }
 
     this.peerRegistry.update(nodeId, {
-      status: 'connecting',
+      status: PeerStatus.CONNECTING,
     });
 
     this.transport.connect(host, port);
