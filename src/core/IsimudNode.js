@@ -111,7 +111,7 @@ export class IsimudNode {
     const connection = this.connectionRegistry.removeConnection(peerId);
 
     if (connection?.nodeId) {
-      this.peerRegistry.updatePeer(connection.nodeId, {
+      this.peerRegistry.update(connection.nodeId, {
         status: 'disconnected',
         disconnectedAt: new Date().toISOString(),
       });
@@ -141,24 +141,16 @@ export class IsimudNode {
       nodeId: remoteNodeId,
     });
 
-    const existingPeer = this.peerRegistry.getPeer(remoteNodeId);
+    const existingPeer = this.peerRegistry.getById(remoteNodeId);
 
-    const peerData = {
+    this.peerRegistry.upsertPeer({
+      nodeId: remoteNodeId,
       username: message.from.username,
-      host: remoteHost,
+      address: remoteHost,
       tcpPort: message.payload.tcpPort,
       status: 'connected',
       connectedAt: new Date().toISOString(),
-    };
-
-    if (existingPeer) {
-      this.peerRegistry.updatePeer(remoteNodeId, peerData);
-    } else {
-      this.peerRegistry.addPeer({
-        nodeId: remoteNodeId,
-        ...peerData,
-      });
-    }
+    });
 
     const wasAlreadyConnected = existingPeer?.status === 'connected';
 
@@ -197,44 +189,30 @@ export class IsimudNode {
   }
 
   #onPeerDiscovered({ nodeId, username, host, port, discoveredAt }) {
-    const existingPeer = this.peerRegistry.getPeer(nodeId);
+    const existingPeer = this.peerRegistry.getById(nodeId);
 
-    if (existingPeer) {
-      this.peerRegistry.updatePeer(nodeId, {
-        username,
-        host,
-        tcpPort: port,
-        discoveredAt,
-        status:
-          existingPeer.status === 'connected' ||
-          existingPeer.status === 'connecting'
-            ? existingPeer.status
-            : 'discovered',
-      });
+    const status =
+      existingPeer?.status === 'connected' ||
+      existingPeer?.status === 'connecting'
+        ? existingPeer.status
+        : 'discovered';
 
-      this.#autoConnectToPeer({
-        nodeId,
-        host,
-        port,
-      });
-
-      return;
-    }
-
-    this.peerRegistry.addPeer({
+    this.peerRegistry.upsertPeer({
       nodeId,
       username,
-      host,
+      address: host,
       tcpPort: port,
       discoveredAt,
-      status: 'discovered',
+      status,
     });
 
-    console.log(`Discovered peer: ${username} at ${host}:${port}`);
+    if (!existingPeer) {
+      console.log(`Discovered peer: ${username} at ${host}:${port}`);
+    }
 
     this.#autoConnectToPeer({
       nodeId,
-      host,
+      address: host,
       port,
     });
   }
@@ -248,7 +226,7 @@ export class IsimudNode {
       return;
     }
 
-    const existingPeer = this.peerRegistry.getPeer(nodeId);
+    const existingPeer = this.peerRegistry.getById(nodeId);
 
     if (existingPeer?.status === 'connected') {
       return;
@@ -266,7 +244,7 @@ export class IsimudNode {
       return;
     }
 
-    this.peerRegistry.updatePeer(nodeId, {
+    this.peerRegistry.update(nodeId, {
       status: 'connecting',
     });
 

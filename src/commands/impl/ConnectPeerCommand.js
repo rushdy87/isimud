@@ -12,7 +12,7 @@ export class ConnectPeerCommand {
       return;
     }
 
-    const peer = this.peerRegistry.findPeerByUsername(username);
+    const peer = this.peerRegistry.getByUsername(username);
 
     if (!peer) {
       console.log(`Peer not found: ${username}`);
@@ -20,8 +20,8 @@ export class ConnectPeerCommand {
       return;
     }
 
-    if (!peer.host || !peer.tcpPort) {
-      console.log(`Peer ${username} has no host or port info.`);
+    if (!peer.address || !peer.tcpPort) {
+      console.log(`Peer ${username} has no address or port info.`);
       return;
     }
 
@@ -30,6 +30,6 @@ export class ConnectPeerCommand {
       return;
     }
 
-    this.transport.connect(peer.host, peer.tcpPort);
+    this.transport.connect(peer.address, peer.tcpPort);
   }
 }

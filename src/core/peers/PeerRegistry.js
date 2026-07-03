@@ -1,75 +1,87 @@
+import { Peer } from './Peer.js';
+import { PeerStatus } from './PeerStatus.js';
+
 export class PeerRegistry {
   constructor() {
     this.peers = new Map();
   }
 
-  addPeer({
-    nodeId,
-    username,
-    host = null,
-    tcpPort = null,
-    status = 'discovered',
-    discoveredAt = null,
-    connectedAt = null,
-  }) {
-    const peer = {
-      nodeId,
-      username,
-      host,
-      tcpPort,
-      status,
-      connectedAt: status === 'connected' ? new Date().toISOString() : null,
-      discoveredAt: status === 'discovered' ? new Date().toISOString() : null,
-    };
+  add(peerData) {
+    const peer = peerData instanceof Peer ? peerData : new Peer(peerData);
 
-    this.peers.set(nodeId, peer);
+    this.peers.set(peer.nodeId, peer);
 
     return peer;
   }
 
-  removePeer(nodeId) {
-    const peer = this.peers.get(nodeId);
+  upsertPeer(peerData) {
+    const existingPeer = this.getById(peerData.nodeId);
 
-    if (!peer) return null;
+    if (!existingPeer) {
+      return this.add(peerData);
+    }
 
-    this.peers.delete(nodeId);
+    return this.update(peerData.nodeId, peerData);
+  }
+
+  update(nodeId, updates) {
+    const peer = this.getById(nodeId);
+
+    if (!peer) {
+      return null;
+    }
+
+    peer.update(updates);
     return peer;
   }
 
-  updatePeer(nodeId, updates) {
-    const peer = this.peers.get(nodeId);
-
-    if (!peer) return null;
-
-    const updatedPeer = {
-      ...peer,
-      ...updates,
-    };
-
-    this.peers.set(nodeId, updatedPeer);
-
-    return updatedPeer;
+  remove(nodeId) {
+    return this.peers.delete(nodeId);
   }
 
-  getPeer(nodeId) {
-    return this.peers.get(nodeId) || null;
+  has(nodeId) {
+    return this.peers.has(nodeId);
   }
 
-  findPeerByUsername(username) {
-    const normalizedUsername = username.toLowerCase();
+  getById(nodeId) {
+    return this.peers.get(nodeId) ?? null;
+  }
 
+  getByUsername(username) {
     return (
-      this.getAllPeers().find(
-        (peer) => peer.username.toLowerCase() === normalizedUsername,
-      ) || null
+      Array.from(this.peers.values()).find(
+        (peer) => peer.username === username,
+      ) ?? null
     );
   }
 
-  getAllPeers() {
+  getAll() {
     return Array.from(this.peers.values());
   }
 
-  count() {
-    return this.peers.size;
+  getConnected() {
+    return this.getAll().filter((peer) => peer.status === PeerStatus.CONNECTED);
+  }
+
+  markConnected(nodeId) {
+    const peer = this.getById(nodeId);
+
+    if (!peer) {
+      return null;
+    }
+
+    peer.markConnected();
+    return peer;
+  }
+
+  markDisconnected(nodeId) {
+    const peer = this.getById(nodeId);
+
+    if (!peer) {
+      return null;
+    }
+
+    peer.markDisconnected();
+    return peer;
   }
 }

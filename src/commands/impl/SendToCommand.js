@@ -16,7 +16,7 @@ export class SendToCommand {
       return;
     }
 
-    const peer = this.peerRegistry.findPeerByUsername(username);
+    const peer = this.peerRegistry.getByUsername(username);
 
     if (!peer) {
       console.log(`Peer not found: ${username}`);

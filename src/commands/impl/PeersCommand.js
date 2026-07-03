@@ -4,7 +4,7 @@ export class PeersCommand {
   }
 
   execute() {
-    const peers = this.peerRegistry.getAllPeers();
+    const peers = this.peerRegistry.getAll();
 
     if (peers.length === 0) {
       console.log('No connected peers.');
@@ -15,7 +15,7 @@ export class PeersCommand {
 
     for (const peer of peers) {
       console.log(
-        `- ${peer.username} | ${peer.host}:${peer.tcpPort} | nodeId: ${peer.nodeId} | status: ${peer.status} | connectedAt: ${peer.connectedAt}`,
+        `- ${peer.username} | ${peer.address}:${peer.tcpPort} | nodeId: ${peer.nodeId} | status: ${peer.status} | connectedAt: ${peer.connectedAt}`,
       );
     }
   }
