@@ -1,62 +1,95 @@
+import { Connection } from './Connection.js';
+
 export class ConnectionRegistry {
   constructor() {
     this.connections = new Map();
   }
 
-  addConnection({ connectionId }) {
-    const connection = {
-      connectionId,
-      nodeId: null,
-      connectedAt: new Date().toISOString(),
-    };
+  add(connectionData) {
+    const connection =
+      connectionData instanceof Connection
+        ? connectionData
+        : new Connection(connectionData);
 
-    this.connections.set(connectionId, connection);
+    this.connections.set(connection.connectionId, connection);
 
     return connection;
   }
 
+  upsert(connectionData) {
+    const existingConnection = this.getById(connectionData.connectionId);
+
+    if (!existingConnection) {
+      return this.add(connectionData);
+    }
+
+    if (connectionData.nodeId) {
+      existingConnection.bindNode(connectionData.nodeId);
+    }
+
+    return existingConnection;
+  }
+
   bindNode({ connectionId, nodeId }) {
-    const connection = this.connections.get(connectionId);
+    const connection = this.getById(connectionId);
 
     if (!connection) {
       return null;
     }
 
-    const updatedConnection = {
-      ...connection,
-      nodeId,
-    };
-
-    this.connections.set(connectionId, updatedConnection);
-
-    return updatedConnection;
+    return connection.bindNode(nodeId);
   }
 
-  removeConnection(connectionId) {
-    const connection = this.connections.get(connectionId);
+  remove(connectionId) {
+    const connection = this.getById(connectionId);
 
     if (!connection) {
       return null;
     }
 
     this.connections.delete(connectionId);
-
     return connection;
   }
 
-  getConnection(connectionId) {
-    return this.connections.get(connectionId) || null;
+  getById(connectionId) {
+    return this.connections.get(connectionId) ?? null;
   }
 
-  findConnectionByNodeId(nodeId) {
+  getByNodeId(nodeId) {
     return (
       Array.from(this.connections.values()).find(
         (connection) => connection.nodeId === nodeId,
-      ) || null
+      ) ?? null
     );
   }
 
-  getAllConnections() {
+  has(connectionId) {
+    return this.connections.has(connectionId);
+  }
+
+  getAll() {
     return Array.from(this.connections.values());
+  }
+
+  // Compatibility aliases.
+  // TODO: Remove these later after updating all call sites.
+  addConnection({ connectionId }) {
+    return this.add({ connectionId });
+  }
+
+  removeConnection(connectionId) {
+    return this.remove(connectionId);
+  }
+
+  getConnection(connectionId) {
+    return this.getById(connectionId);
+  }
+
+  findConnectionByNodeId(nodeId) {
+    return this.getByNodeId(nodeId);
+  }
+
+  getAllConnections() {
+    return this.getAll();
   }
 }

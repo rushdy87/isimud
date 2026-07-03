@@ -94,7 +94,7 @@ export class IsimudNode {
   }
 
   #onPeerConnected({ peerId }) {
-    this.connectionRegistry.addConnection({
+    this.connectionRegistry.add({
       connectionId: peerId,
     });
 
@@ -108,7 +108,7 @@ export class IsimudNode {
   }
 
   #onPeerDisconnected({ peerId }) {
-    const connection = this.connectionRegistry.removeConnection(peerId);
+    const connection = this.connectionRegistry.remove(peerId);
 
     if (connection?.nodeId) {
       this.peerRegistry.update(connection.nodeId, {
@@ -146,7 +146,7 @@ export class IsimudNode {
     this.peerRegistry.upsertPeer({
       nodeId: remoteNodeId,
       username: message.from.username,
-      address: remoteHost,
+      host: remoteHost,
       tcpPort: message.payload.tcpPort,
       status: 'connected',
       connectedAt: new Date().toISOString(),
@@ -200,7 +200,7 @@ export class IsimudNode {
     this.peerRegistry.upsertPeer({
       nodeId,
       username,
-      address: host,
+      host,
       tcpPort: port,
       discoveredAt,
       status,
@@ -212,7 +212,7 @@ export class IsimudNode {
 
     this.#autoConnectToPeer({
       nodeId,
-      address: host,
+      host,
       port,
     });
   }
@@ -236,9 +236,8 @@ export class IsimudNode {
       return;
     }
 
-    const alreadyConnected = this.connectionRegistry
-      .getAllConnections()
-      .some((connection) => connection.nodeId === nodeId);
+    const alreadyConnected =
+      this.connectionRegistry.getByNodeId(nodeId) !== null;
 
     if (alreadyConnected) {
       return;
