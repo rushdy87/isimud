@@ -114,7 +114,7 @@ export class IsimudNode {
     if (connection?.nodeId) {
       this.peerRegistry.update(connection.nodeId, {
         status: PeerStatus.DISCONNECTED,
-        disconnectedAt: new Date().toISOString(),
+        disconnectedAt: this.#now(),
       });
     }
 
@@ -135,27 +135,23 @@ export class IsimudNode {
 
   #handleHelloMessage({ peerId, message }) {
     const remoteNodeId = message.from.nodeId;
-    const remoteHost = peerId.split(':')[0] || 'localhost';
+    const remoteHost = this.#extractHostFromPeerId(peerId);
 
-    this.connectionRegistry.bindNode({
+    this.#bindConnectionToNode({
       connectionId: peerId,
       nodeId: remoteNodeId,
     });
 
     const existingPeer = this.peerRegistry.getById(remoteNodeId);
 
-    this.peerRegistry.upsertPeer({
+    this.#markPeerAsConnected({
       nodeId: remoteNodeId,
       username: message.from.username,
       host: remoteHost,
       tcpPort: message.payload.tcpPort,
-      status: PeerStatus.CONNECTED,
-      connectedAt: new Date().toISOString(),
     });
 
-    const wasAlreadyConnected = existingPeer?.status === PeerStatus.CONNECTED;
-
-    if (!wasAlreadyConnected) {
+    if (!this.#wasPeerAlreadyConnected(existingPeer)) {
       console.log(`\n${message.from.username} joined`);
     }
   }
@@ -192,19 +188,13 @@ export class IsimudNode {
   #onPeerDiscovered({ nodeId, username, host, port, discoveredAt }) {
     const existingPeer = this.peerRegistry.getById(nodeId);
 
-    const status =
-      existingPeer?.status === PeerStatus.CONNECTED ||
-      existingPeer?.status === PeerStatus.CONNECTING
-        ? existingPeer.status
-        : PeerStatus.DISCOVERED;
-
-    this.peerRegistry.upsertPeer({
+    this.#markPeerAsDiscovered({
       nodeId,
       username,
       host,
       tcpPort: port,
       discoveredAt,
-      status,
+      currentStatus: existingPeer?.status,
     });
 
     if (!existingPeer) {
@@ -223,24 +213,7 @@ export class IsimudNode {
   }
 
   #autoConnectToPeer({ nodeId, host, port }) {
-    if (!this.config.discovery.autoConnect) {
-      return;
-    }
-
-    const existingPeer = this.peerRegistry.getById(nodeId);
-
-    if (existingPeer?.status === PeerStatus.CONNECTED) {
-      return;
-    }
-
-    if (existingPeer?.status === PeerStatus.CONNECTING) {
-      return;
-    }
-
-    const alreadyConnected =
-      this.connectionRegistry.getByNodeId(nodeId) !== null;
-
-    if (alreadyConnected) {
+    if (!this.#shouldAutoConnectToPeer(nodeId)) {
       return;
     }
 
@@ -249,5 +222,81 @@ export class IsimudNode {
     });
 
     this.transport.connect(host, port);
+  }
+
+  #now() {
+    return new Date().toISOString();
+  }
+
+  #extractHostFromPeerId(peerId) {
+    return peerId.split(':')[0] || 'localhost';
+  }
+
+  #bindConnectionToNode({ connectionId, nodeId }) {
+    this.connectionRegistry.bindNode({
+      connectionId,
+      nodeId,
+    });
+  }
+
+  #markPeerAsConnected({ nodeId, username, host, tcpPort }) {
+    this.peerRegistry.upsertPeer({
+      nodeId,
+      username,
+      host,
+      tcpPort,
+      status: PeerStatus.CONNECTED,
+      connectedAt: this.#now(),
+    });
+  }
+
+  #wasPeerAlreadyConnected(peer) {
+    return peer?.status === PeerStatus.CONNECTED;
+  }
+
+  #markPeerAsDiscovered({
+    nodeId,
+    username,
+    host,
+    tcpPort,
+    discoveredAt,
+    currentStatus,
+  }) {
+    const status = this.#preserveActivePeerStatus(currentStatus);
+
+    this.peerRegistry.upsertPeer({
+      nodeId,
+      username,
+      host,
+      tcpPort,
+      discoveredAt,
+      status,
+    });
+  }
+
+  #preserveActivePeerStatus(status) {
+    if (status === PeerStatus.CONNECTED || status === PeerStatus.CONNECTING) {
+      return status;
+    }
+
+    return PeerStatus.DISCOVERED;
+  }
+
+  #shouldAutoConnectToPeer(nodeId) {
+    if (!this.config.discovery.autoConnect) {
+      return false;
+    }
+
+    const existingPeer = this.peerRegistry.getById(nodeId);
+
+    if (existingPeer?.status === PeerStatus.CONNECTED) {
+      return false;
+    }
+
+    if (existingPeer?.status === PeerStatus.CONNECTING) {
+      return false;
+    }
+
+    return this.connectionRegistry.getByNodeId(nodeId) === null;
   }
 }
